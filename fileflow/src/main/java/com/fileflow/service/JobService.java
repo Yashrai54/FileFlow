@@ -10,6 +10,10 @@ import com.fileflow.repository.TransferRunRepository;
 import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import com.fileflow.event.JobChangedEvent;
+
+
 
 import java.util.List;
 
@@ -21,16 +25,23 @@ public class JobService {
 
     private final TransferJobRepository transferJobRepository;
     private final TransferRunRepository transferRunRepository;
+        private final ApplicationEventPublisher events;
 
-    public JobService(TransferJobRepository transferJobRepository, TransferRunRepository transferRunRepository) {
+
+    public JobService(TransferJobRepository transferJobRepository, TransferRunRepository transferRunRepository, ApplicationEventPublisher events) {
         this.transferJobRepository = transferJobRepository;
         this.transferRunRepository = transferRunRepository;
+        this.events = events;
     }
 
     public JobResponse create(JobRequest jobRequest) {
         TransferJob job = new TransferJob();
         apply(job, jobRequest);
-        return JobResponse.from(transferJobRepository.save(job));
+                TransferJob saved = transferJobRepository.save(job);
+
+                events.publishEvent(new JobChangedEvent(saved.getId()));
+
+        return JobResponse.from(saved);
     }
     @Transactional(readOnly = true)
     public List<JobResponse> list() {
@@ -45,6 +56,8 @@ public class JobService {
     public JobResponse update(Long id, JobRequest request) {
         TransferJob job = findOrThrow(id);
         apply(job, request);
+                events.publishEvent(new JobChangedEvent(id));
+
         return JobResponse.from(job);
     }
 
@@ -52,17 +65,23 @@ public class JobService {
         TransferJob job = findOrThrow(id);
         transferRunRepository.deleteByTransferJobId(id);
         transferJobRepository.delete(job);
+                events.publishEvent(new JobChangedEvent(id));
+
     }
 
     public JobResponse pause(Long id) {
         TransferJob job = findOrThrow(id);
         job.setStatus(JobStatus.PAUSED);
+                events.publishEvent(new JobChangedEvent(id));
+
         return JobResponse.from(job);
     }
 
     public JobResponse resume(Long id) {
         TransferJob job = findOrThrow(id);
         job.setStatus(JobStatus.ACTIVE);
+                events.publishEvent(new JobChangedEvent(id));
+
         return JobResponse.from(job);
     }
 

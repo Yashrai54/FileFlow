@@ -72,6 +72,11 @@
     <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
     <version>3.1.1</version>
 </dependency>
+<dependency>
+    <groupId>com.hierynomus</groupId>
+    <artifactId>sshj</artifactId>
+    <version>0.40.0</version>
+</dependency>
 	</dependencies>
 
 	<build>

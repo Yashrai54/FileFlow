@@ -1,12 +1,15 @@
 package com.fileflow.service;
 
 import com.fileflow.dto.RunResponse;
+import com.fileflow.event.RunQueuedEvent;
 import com.fileflow.exception.ResourceNotFoundException;
 import com.fileflow.models.JobStatus;
+import com.fileflow.models.RunStatus;
 import com.fileflow.models.TransferJob;
 import com.fileflow.models.TransferRun;
 import com.fileflow.repository.TransferJobRepository;
 import com.fileflow.repository.TransferRunRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +20,15 @@ import java.util.List;
 public class RunService {
     private final TransferJobRepository jobRepository;
     private final TransferRunRepository runRepository;
+        private final ApplicationEventPublisher events;
 
-    public RunService(TransferJobRepository jobRepository, TransferRunRepository runRepository) {
+
+    public RunService(TransferJobRepository jobRepository,
+                      TransferRunRepository runRepository,
+                      ApplicationEventPublisher events) {
         this.jobRepository = jobRepository;
         this.runRepository = runRepository;
+        this.events = events;
     }
 
     public RunResponse trigger(Long jobId) {
@@ -30,6 +38,7 @@ public class RunService {
             throw new IllegalStateException("Job " + jobId + " is paused and cannot be triggered");
         }
         TransferRun run = runRepository.save(new TransferRun(job));
+        events.publishEvent(new RunQueuedEvent(run.getId()));
         return RunResponse.from(run, jobId);
     }
 
