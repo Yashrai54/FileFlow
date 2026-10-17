@@ -17,6 +17,8 @@ public interface TransferRunRepository extends JpaRepository<TransferRun, Long> 
     void deleteByTransferJobId(Long transferJobId);
 
     boolean existsByTransferJobIdAndStatusIn(Long transferJobId, Collection<RunStatus> statuses);
+    boolean existsByTransferJobIdAndStatus(Long jobId, RunStatus status);
+    List<TransferRun> findByStatusIn(Collection<RunStatus> statuses);
 
         @Query("select r from TransferRun r join fetch r.transferJob where r.id = :id")
     Optional<TransferRun> findByIdWithJob(@Param("id") Long id);

@@ -31,17 +31,29 @@ public class RunService {
         this.events = events;
     }
 
-    public RunResponse trigger(Long jobId) {
-        TransferJob job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException("Job " + jobId + " not found"));
-        if (job.getStatus() != JobStatus.ACTIVE) {
-            throw new IllegalStateException("Job " + jobId + " is paused and cannot be triggered");
-        }
-        TransferRun run = runRepository.save(new TransferRun(job));
-        events.publishEvent(new RunQueuedEvent(run.getId()));
-        return RunResponse.from(run, jobId);
+   public RunResponse trigger(Long jobId) {
+    TransferJob job = jobRepository.findById(jobId)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Job " + jobId + " not found"));
+
+    if (job.getStatus() != JobStatus.ACTIVE) {
+        throw new IllegalStateException(
+                "Job " + jobId + " is paused and cannot be triggered");
     }
 
+    boolean alreadyRunning = runRepository
+            .existsByTransferJobIdAndStatus(jobId, RunStatus.RUNNING);
+
+    if (alreadyRunning) {
+        throw new IllegalStateException(
+                "Job " + jobId + " already has a running execution");
+    }
+
+    TransferRun run = runRepository.save(new TransferRun(job));
+    events.publishEvent(new RunQueuedEvent(run.getId()));
+
+    return RunResponse.from(run, jobId);
+}
     @Transactional(readOnly = true)
     public List<RunResponse> listForJob(Long jobId) {
         if (!jobRepository.existsById(jobId)) {

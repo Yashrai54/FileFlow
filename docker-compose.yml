@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: fileflow
+      POSTGRES_USER: fileflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fileflow}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fileflow -d fileflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  sftp:
+    image: atmoz/sftp
+    command: demo:demo123:::upload
+    ports:
+      - "2222:22"
+    volumes:
+      - ./sftp-data:/home/demo/upload
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fileflow
+      SPRING_DATASOURCE_USERNAME: fileflow
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-fileflow}
+      SPRING_H2_CONSOLE_ENABLED: "false"
+      FILEFLOW_SFTP_PASSWORD: demo123
+    volumes:
+      - ./data:/data
+
+volumes:
+  pgdata:
