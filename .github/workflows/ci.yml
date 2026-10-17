@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fileflow        # <- your project folder
+
     steps:
       - uses: actions/checkout@v4
 
@@ -16,6 +20,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: fileflow/pom.xml   # <- same folder
 
       - name: Build and test
         run: mvn -B verify
