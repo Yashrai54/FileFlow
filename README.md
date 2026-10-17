@@ -1,3 +1,5 @@
+[![CI](https://github.com/Yashrai54/FileFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/Yashrai54/FileFlow/actions/workflows/ci.yml)
+
 # FileFlow
 
 A small managed-file-transfer service built with Java 17 and Spring Boot.
